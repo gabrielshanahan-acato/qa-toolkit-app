@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA Testing Toolkit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen">
+
+    <!-- Header -->
+    <header class="p-6 border-b border-gray-700">
+        <h1 class="text-3xl font-bold text-center">QA Testing Toolkit</h1>
+        <p class="text-center text-gray-400 mt-2">
+            Lightweight utilities for QA engineers & testers
+        </p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-6 max-w-7xl mx-auto">
+
+        <!-- Filter Bar -->
+        <div id="filterBar" class="flex flex-wrap gap-2 mb-6"></div>
+
+        <!-- Grid -->
+        <div id="toolGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        </div>
+
+        <!-- Tool Container -->
+        <div id="tool-container" class="hidden mt-10">
+            
+            <!-- Back Button -->
+            <button onclick="goHome()" 
+                class="mb-6 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg">
+                ← Back to Tools
+            </button>
+
+            <!-- Dynamic Tool Content -->
+            <div id="tool-content" class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+                <!-- JS will inject tool UI here -->
+            </div>
+
+        </div>
+    </main>
+    <script>
+        let selectedCategory = "All";
+        let favoritesOnly = false;
+
+        window.onload = function () {
+            renderFilterBar();
+            renderTools();
+        };
+
+        const tools = [
+            {
+                id: "text",
+                name: "Random Text Generator",
+                description: "Generate randomized strings with custom length and spacing.",
+                category: "Data"
+            },
+            {
+                id: "api",
+                name: "API Tester",
+                description: "Test REST APIs with custom requests and responses.",
+                category: "API"
+            },
+            {
+                id: "json",
+                name: "JSON Formatter",
+                description: "Validate and format JSON data.",
+                category: "Data"
+            },
+            {
+                id: "data",
+                name: "Data Generator",
+                description: "Create random emails, usernames, and test data.",
+                category: "Data"
+            },
+            {
+                id: "string",
+                name: "String Validator",
+                description: "Analyze string length, whitespace, and characters.",
+                category: "QA"
+            },
+            {
+                id: "edge",
+                name: "Edge Case Generator",
+                description: "Generate tricky inputs like XSS and SQL injection strings.",
+                category: "Security"
+            },
+            {
+                id: "bva",
+                name: "Boundary Value Analyzer",
+                description: "Visualizes boundary values for testing input limits.",
+                category: "QA"
+            },
+            {
+                id: "bug",
+                name: "Bug Severity Classifier",
+                description: "Classifies system bugs based on probability + consequence levels.",
+                category: "QA"
+            },
+            {
+                id: "file",
+                name: "Test File Generator",
+                description: "Generates test files for validating file upload behavior.",
+                category: "Testing"
+            },
+            {
+                id: "sanInput",
+                name: "Input Sanitization Checker",
+                description: "Checks input for proper sanitization and shows how it can be sanitized.",
+                category: "Security"
+            }
+        ];
+
+        function filterTools(tools) {
+            let filtered = tools;
+
+            // Category filter
+            if (selectedCategory !== "All") {
+                filtered = filtered.filter(tool => tool.category === selectedCategory);
+            }
+
+            // Favorites-only filter
+            if (favoritesOnly) {
+                const favs = getFavorites();
+                filtered = filtered.filter(tool => favs.includes(tool.id));
+            }
+
+            return filtered;
+        }
+
+        function toggleFavoritesOnly() {
+            favoritesOnly = !favoritesOnly;
+            renderFilterBar();
+            renderTools();
+        }
+
+        function renderFilterBar() {
+            const categories = ["All", "QA", "API", "Security", "Data", "Testing"];
+            const bar = document.getElementById("filterBar");
+
+            bar.innerHTML = categories.map(cat => {
+                const isActive = selectedCategory === cat;
+
+                return `
+                    <button
+                        onclick="setCategory('${cat}')"
+                        class="px-3 py-1 rounded-full text-sm transition
+                        ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}">
+                        ${cat}
+                    </button>
+                `;
+            }).join("");
+
+            const favActive = favoritesOnly ? "bg-yellow-500 text-black" : "bg-gray-700 text-gray-300 hover:bg-gray-600";
+
+            bar.innerHTML += `
+                <button
+                    onclick="toggleFavoritesOnly()"
+                    class="px-3 py-1 rounded-full text-sm transition ml-2 ${favActive}">
+                    ⭐ Favorites Only
+                </button>
+            `;
+        }
+
+        function getCategoryColor(category) {
+            switch (category) {
+                case "QA": return "bg-red-900 text-red-300";
+                case "API": return "bg-blue-900 text-blue-300";
+                case "Security": return "bg-purple-900 text-purple-300";
+                case "Data": return "bg-green-900 text-green-300";
+                default: return "bg-gray-700 text-gray-300";
+            }
+        }
+
+        function setCategory(category) {
+            selectedCategory = category;
+            renderFilterBar();
+            renderTools();
+        }
+
+        function toggleFavorite(toolId) {
+            let favs = getFavorites();
+
+            if (favs.includes(toolId)) {
+                favs = favs.filter(id => id !== toolId);
+            } else {
+                favs.push(toolId);
+            }
+
+            saveFavorites(favs);
+
+            renderTools(); // refresh UI so stars update
+        }
+
+        function getFavorites() {
+            return JSON.parse(localStorage.getItem("favorites") || "[]");
+        }
+
+        function saveFavorites(favs) {
+            localStorage.setItem("favorites", JSON.stringify(favs));
+        }
+
+        function isFavorite(toolId) {
+            return getFavorites().includes(toolId);
+        }
+
+        function sortTools(tools) {
+            let favs = getFavorites();
+
+            return [...tools].sort((a, b) => {
+                let aFav = favs.includes(a.id);
+                let bFav = favs.includes(b.id);
+
+                return (bFav - aFav); // favorites first
+            });
+        }
+
+        function renderCard(tool) {
+            return `
+                <div class="relative bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-transform hover:scale-[1.02] flex flex-col gap-3">
+
+                    <!-- Favorite button -->
+                    <button onclick="toggleFavorite('${tool.id}')"
+                        class="absolute top-3 right-3 text-yellow-400 text-xl">
+                        ${isFavorite(tool.id) ? "⭐" : "☆"}
+                    </button>
+
+                    <!-- Title -->
+                    <h2 class="text-xl font-semibold mb-2">${tool.name}</h2>
+
+                    <!-- Description -->
+                    <p class="text-gray-400 mb-4">${tool.description}</p>
+
+                    <!-- Open button -->
+                    <button onclick="openTool('${tool.id}')"
+                        class="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition">
+                        Open Tool
+                    </button>
+
+                    <!-- Category Tag -->
+                    <span class="inline-block w-fit px-2 py-1 text-xs rounded-full ${getCategoryColor(tool.category)}">
+                        ${tool.category}
+                    </span>
+
+                </div>
+            `;
+        }
+
+        function renderTools() {
+            const container = document.getElementById("toolGrid");
+
+            container.innerHTML = sortTools(filterTools(tools))
+                .map(tool => renderCard(tool))
+                .join("");
+        }
+
+        function openTool(tool) {
+            // Hide cards
+            document.getElementById("toolGrid").classList.add("hidden");
+            document.getElementById("filterBar").classList.add("hidden");
+
+            // Show tool container
+            document.getElementById("tool-container").classList.remove("hidden");
+
+            // Load tool UI
+            loadTool(tool);
+        }
+
+        function goHome() {
+            // Show cards
+            document.getElementById("toolGrid").classList.remove("hidden");
+            document.getElementById("filterBar").classList.remove("hidden");
+
+            // Hide tool container
+            document.getElementById("tool-container").classList.add("hidden");
+
+            document.getElementById("tool-content").innerHTML = "";
+        }
+
+        function loadTool(tool) {
+            const container = document.getElementById("tool-content");
+
+            if (tool === "text") {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">Random Text Generator</h2>
+
+                    <label class="block mb-2">Length:</label>
+                    <input id="length" type="number" value="20"
+                        class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+
+                    <label class="block mb-2">Include Spaces:</label>
+                    <input id="spaces" type="checkbox" class="mb-4">
+
+                    <button onclick="generateText()" 
+                        class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+                        Generate
+                    </button>
+
+                    <textarea id="output" 
+                        class="w-full mt-4 p-2 rounded bg-gray-900 text-white"
+                        rows="4"></textarea>
+                `;
+            }
+
+            else if (tool === "data") {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">Data Generator</h2>
+
+                    <!-- Type -->
+                    <label class="block mb-2">Data Type</label>
+                    <select id="dataType" class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+                        <option value="email">Email</option>
+                        <option value="username">Username</option>
+                        <option value="phone">Phone Number</option>
+                        <option value="id">Random ID</option>
+                    </select>
+
+                    <!-- Valid / Invalid Toggle -->
+                    <label class="flex items-center gap-2 mb-4">
+                        <input type="checkbox" id="invalidToggle">
+                        Generate INVALID data (QA edge cases)
+                    </label>
+
+                    <!-- Count -->
+                    <label class="block mb-2">Amount</label>
+                    <input id="count" type="number" value="5"
+                        class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+
+                    <button onclick="generateData()"
+                        class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+                        Generate
+                    </button>
+
+                    <pre id="dataOutput"
+                        class="mt-4 p-3 bg-gray-900 rounded text-sm overflow-auto"></pre>
+                `;
+            }
+
+            else if (tool === "api") {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">API Tester</h2>
+
+                    <!-- Method -->
+                    <label class="block mb-2">Method</label>
+                    <select id="method" class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+                        <option>GET</option>
+                        <option>POST</option>
+                    </select>
+
+                    <!-- URL -->
+                    <label class="block mb-2">URL</label>
+                    <input id="url" placeholder="https://api.example.com/data"
+                        class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+
+                    <!-- Headers -->
+                    <label class="block mb-2">Headers (JSON)</label>
+                    <textarea id="headers"
+                        class="w-full p-2 mb-4 rounded bg-gray-900 text-white"
+                        rows="3"
+                        placeholder='{"Content-Type": "application/json"}'></textarea>
+
+                    <!-- Body -->
+                    <label class="block mb-2">Body (POST only)</label>
+                    <textarea id="body"
+                        class="w-full p-2 mb-4 rounded bg-gray-900 text-white"
+                        rows="4"
+                        placeholder='{"key": "value"}'></textarea>
+
+                    <!-- Send Button -->
+                    <button onclick="sendRequest()"
+                        class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+                        Send Request
+                    </button>
+
+                    <!-- Response -->
+                    <div class="mt-6">
+                        <h3 class="text-lg font-semibold mb-2">Response</h3>
+                        <div id="status" class="mb-2 text-sm text-gray-300"></div>
+                        <pre id="response"
+                            class="p-3 bg-gray-900 rounded overflow-auto text-sm"></pre>
+                    </div>
+                `;
+            }
+
+            else if (tool === "json") {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">JSON Formatter & Validator</h2>
+
+                    <!-- Input -->
+                    <label class="block mb-2">Input JSON</label>
+                    <textarea id="jsonInput"
+                        class="w-full p-3 h-40 rounded bg-gray-700 text-white font-mono"
+                        placeholder='{"name":"test","id":1}'></textarea>
+
+                    <!-- Buttons -->
+                    <div class="flex gap-3 mt-4">
+                        <button onclick="formatJSON()"
+                            class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+                            Format
+                        </button>
+
+                        <button onclick="clearJSON()"
+                            class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded">
+                            Clear
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div id="jsonStatus" class="mt-4 text-sm"></div>
+
+                    <!-- Output -->
+                    <pre id="jsonOutput"
+                        class="mt-4 p-4 bg-gray-900 rounded overflow-auto text-sm"></pre>
+                `;
+            }
+
+            else if (tool === "string") {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">String Validator</h2>
+
+                    <!-- Input -->
+                    <label class="block mb-2">Input String</label>
+                    <textarea id="stringInput"
+                        class="w-full p-3 h-32 rounded bg-gray-700 text-white font-mono"
+                        placeholder="Enter text to analyze..."></textarea>
+
+                    <!-- Analyze Button -->
+                    <button onclick="analyzeString()"
+                        class="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+                        Analyze
+                    </button>
+
+                    <!-- Results -->
+                    <div id="stringResults" class="mt-6 space-y-2"></div>
+                `;
+            }
+
+            else if (tool === "edge") {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">Edge Case Generator</h2>
+
+                    <!-- Category -->
+                    <label class="block mb-2">Case Type</label>
+                    <select id="edgeType" class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+                        <option value="sql">SQL Injection</option>
+                        <option value="xss">XSS Payloads</option>
+                        <option value="unicode">Unicode / Encoding</option>
+                        <option value="long">Very Long Strings</option>
+                        <option value="empty">Empty / Null Cases</option>
+                        <option value="control">Control Characters</option>
+                    </select>
+
+                    <!-- Count -->
+                    <label class="block mb-2">Amount</label>
+                    <input id="edgeCount" type="number" value="5"
+                        class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+
+                    <button onclick="generateEdgeCases()"
+                        class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded">
+                        Generate Edge Cases
+                    </button>
+
+                    <pre id="edgeOutput"
+                        class="mt-4 p-3 bg-gray-900 rounded text-sm overflow-auto"></pre>
+                `;
+            }
+
+            else if (tool === "bva") {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">Boundary Value Analyzer</h2>
+
+                    <!-- Min -->
+                    <label class="block mb-2">Minimum Value</label>
+                    <input id="minVal" type="number"
+                        class="w-full p-2 mb-4 rounded bg-gray-700 text-white"
+                        placeholder="e.g. 1">
+
+                    <!-- Max -->
+                    <label class="block mb-2">Maximum Value</label>
+                    <input id="maxVal" type="number"
+                        class="w-full p-2 mb-4 rounded bg-gray-700 text-white"
+                        placeholder="e.g. 100">
+
+                    <button onclick="generateBoundaryValues()"
+                        class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+                        Generate Test Values
+                    </button>
+
+                    <div id="bvaOutput" class="mt-6 space-y-2"></div>
+                `;
+            }
+
+            else if (tool === "bug") {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">Bug Severity Classifier</h2>
+
+                    <!-- Title -->
+                    <label class="block mb-2">Bug Title</label>
+                    <input id="bugTitle" type="text"
+                        class="w-full p-2 mb-4 rounded bg-gray-700 text-white"
+                        placeholder="e.g. Login button does not work">
+
+                    <!-- Description -->
+                    <label class="block mb-2">Bug Description</label>
+                    <textarea id="bugDesc"
+                        class="w-full p-3 h-32 rounded bg-gray-700 text-white font-mono"
+                        placeholder="Describe the issue in detail..."></textarea>
+
+                    <button onclick="classifyBugAuto()"
+                        class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded mt-4">
+                        Classify Bug
+                    </button>
+
+                    <div id="bugOutput" class="mt-6"></div>
+                `;
+            }
+
+            else if (tool === "file") {
+            container.innerHTML = `
+                <h2 class="text-2xl font-bold mb-4">Test File Generator</h2>
+
+                <!-- File Type -->
+                <label class="block mb-2">File Type</label>
+                <select id="fileType" class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+                    <option value="docx">DOCX</option>
+                    <option value="txt">TXT</option>
+                    <option value="json">JSON</option>
+                    <option value="csv">CSV</option>
+                    <option value="gif">GIF (mock binary)</option>
+                    <option value="mp4">MP4 (mock binary)</option>
+                    <option value="mp3">MP3 (mock binary)</option>
+                    <option value="png">PNG (mock binary)</option>
+                    <option value="jpg">JPG (mock binary)</option>
+                </select>
+
+                <!-- Size -->
+                <label class="block mb-2">File Size (KB)</label>
+                <input id="fileSize" type="number" value="10"
+                    class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+
+                <button onclick="generateFile()"
+                    class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+                    Generate File
+                </button>
+
+                <div id="fileStatus" class="mt-4 text-sm text-gray-300"></div>
+            `;
+        }
+
+            else {
+                container.innerHTML = `<p>Tool coming soon...</p>`;
+            }
+        }
+
+        function runSanitizationChecker() {
+            const input = document.getElementById("sanInput").value;
+
+            const result = sanitizeInput(input);
+
+            document.getElementById("sanOutput").innerHTML = `
+                <div class="bg-gray-900 p-4 rounded-lg space-y-3">
+
+                    <div>
+                        <h3 class="text-sm text-gray-400">Original</h3>
+                        <p class="text-white">${result.original}</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm text-gray-400">Sanitized</h3>
+                        <p class="text-green-400">${result.cleaned}</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm text-gray-400">Warnings</h3>
+                        <ul class="text-yellow-400 list-disc ml-5">
+                            ${result.warnings.map(w => `<li>${w}</li>`).join("") || "<li>None</li>"}
+                        </ul>
+                    </div>
+
+                </div>
+            `;
+        }
+
+        function sanitizeInput(input) {
+            let original = input;
+
+            let warnings = [];
+
+            // 1. XSS removal
+            let noScripts = input.replace(/<script.*?>.*?<\/script>/gi, "");
+            if (noScripts !== input) {
+                warnings.push("Removed <script> tag (XSS risk)");
+            }
+
+            // 2. Remove HTML tags
+            let noHtml = noScripts.replace(/<[^>]*>/g, "");
+            if (noHtml !== noScripts) {
+                warnings.push("Removed HTML tags");
+            }
+
+            // 3. SQL injection patterns (basic detection)
+            let sqlPatterns = /('|"|;|--|\/\*|\*\/|DROP|SELECT|INSERT|DELETE)/gi;
+            if (sqlPatterns.test(noHtml)) {
+                warnings.push("Possible SQL injection characters detected");
+            }
+
+            let cleaned = noHtml.replace(sqlPatterns, "");
+
+            // 4. Trim whitespace normalization
+            cleaned = cleaned.replace(/\s+/g, " ").trim();
+
+            return {
+                original,
+                cleaned,
+                warnings
+            };
+        }
+
+        function generateText() {
+            let length = parseInt(document.getElementById("length").value);
+            let includeSpaces = document.getElementById("spaces").checked;
+
+            let chars = "abcdefghijklmnopqrstuvwxyz";
+            let result = "";
+
+            if (!includeSpaces) {
+                // Simple random string (no spaces)
+                for (let i = 0; i < length; i++) {
+                    let randomIndex = Math.floor(Math.random() * chars.length);
+                    result += chars[randomIndex];
+                }
+            } else {
+                // Word-based generation for natural spacing
+                let currentLength = 0;
+
+                while (currentLength < length) {
+                    // Create a "word" between 2–10 characters
+                    let wordLength = Math.floor(Math.random() * 8) + 2;
+                    let word = "";
+
+                    for (let i = 0; i < wordLength; i++) {
+                        let randomIndex = Math.floor(Math.random() * chars.length);
+                        word += chars[randomIndex];
+                    }
+
+                    // Add word to result
+                    result += word;
+                    currentLength += wordLength;
+
+                    // Add space logic (more natural variation)
+                    if (currentLength < length) {
+                        let spaceChance = Math.random();
+
+                        // 70% chance normal space, 30% double space
+                        if (spaceChance < 0.7) {
+                            result += " ";
+                            currentLength += 1;
+                        } else {
+                            result += "  "; // double space (QA edge case friendly)
+                            currentLength += 2;
+                        }
+                    }
+                }
+
+                // Trim excess if slightly over target length
+                result = result.trim();
+            }
+
+            document.getElementById("output").value = result;
+        }
+
+        async function sendRequest() {
+            let method = document.getElementById("method").value;
+            let url = document.getElementById("url").value;
+            let headersInput = document.getElementById("headers").value;
+            let bodyInput = document.getElementById("body").value;
+
+            let statusEl = document.getElementById("status");
+            let responseEl = document.getElementById("response");
+
+            try {
+                // Parse headers safely
+                let headers = {};
+                if (headersInput.trim()) {
+                    headers = JSON.parse(headersInput);
+                }
+
+                // Build fetch options
+                let options = {
+                    method,
+                    headers
+                };
+
+                // Add body only for non-GET
+                if (method !== "GET" && bodyInput.trim()) {
+                    options.body = bodyInput;
+                }
+
+                let startTime = performance.now();
+
+                let res = await fetch(url, options);
+
+                let endTime = performance.now();
+                let duration = (endTime - startTime).toFixed(2);
+
+                let text = await res.text();
+
+                // Try to format JSON if possible
+                let formatted;
+                try {
+                    formatted = JSON.stringify(JSON.parse(text), null, 2);
+                } catch {
+                    formatted = text;
+                }
+
+                statusEl.innerHTML = `
+                    Status: ${res.status} ${res.statusText} | Time: ${duration}ms
+                `;
+
+                responseEl.textContent = formatted;
+
+            } catch (err) {
+                statusEl.innerHTML = `<span class="text-red-400">Request Failed</span>`;
+                responseEl.textContent = err.toString();
+            }
+        }
+
+        function generateData() {
+            let type = document.getElementById("dataType").value;
+            let count = parseInt(document.getElementById("count").value);
+            let invalid = document.getElementById("invalidToggle").checked;
+
+            let output = [];
+
+            for (let i = 0; i < count; i++) {
+                if (type === "email") {
+                    output.push(generateEmail(invalid));
+                }
+                else if (type === "username") {
+                    output.push(generateUsername(invalid));
+                }
+                else if (type === "phone") {
+                    output.push(generatePhone(invalid));
+                }
+                else if (type === "id") {
+                    output.push(generateID(invalid));
+                }
+            }
+
+            document.getElementById("dataOutput").textContent =
+                output.join("\n");
+        }
+
+        function generateEmail(invalid) {
+            let chars = "abcdefghijklmnopqrstuvwxyz";
+
+            let name = "";
+            for (let i = 0; i < 6; i++) {
+                name += chars[Math.floor(Math.random() * chars.length)];
+            }
+
+            let domain = "test.com";
+
+            if (invalid) {
+                let bad = ["@", "", "!!!", "@@", "test", "com"];
+                return name + bad[Math.floor(Math.random() * bad.length)];
+            }
+
+            return `${name}@${domain}`;
+        }
+
+        function generateUsername(invalid) {
+            let chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+            let username = "";
+            let len = invalid ? 2 : 8;
+
+            for (let i = 0; i < len; i++) {
+                username += chars[Math.floor(Math.random() * chars.length)];
+            }
+
+            if (invalid) {
+                username = username.replace(/a/g, "@"); // intentional weirdness
+            }
+
+            return username;
+        }
+
+        function generatePhone(invalid) {
+            let num = "";
+
+            for (let i = 0; i < 10; i++) {
+                num += Math.floor(Math.random() * 10);
+            }
+
+            if (invalid) {
+                let formats = [
+                    num,
+                    num.slice(0, 6),
+                    "ABC" + num,
+                    num + "!!!"
+                ];
+                return formats[Math.floor(Math.random() * formats.length)];
+            }
+
+            return `(${num.slice(0,3)}) ${num.slice(3,6)}-${num.slice(6)}`;
+        }
+
+        function generateID(invalid) {
+            let id = "";
+
+            for (let i = 0; i < 8; i++) {
+                id += Math.floor(Math.random() * 10);
+            }
+
+            if (invalid) {
+                return id + "X"; // breaks numeric assumptions
+            }
+
+            return id;
+        }
+
+        function generateEdgeCases() {
+            let type = document.getElementById("edgeType").value;
+            let count = parseInt(document.getElementById("edgeCount").value);
+
+            let output = [];
+
+            for (let i = 0; i < count; i++) {
+                if (type === "sql") {
+                    output.push(getSQLPayload());
+                }
+                else if (type === "xss") {
+                    output.push(getXSSPayload());
+                }
+                else if (type === "unicode") {
+                    output.push(getUnicodePayload());
+                }
+                else if (type === "long") {
+                    output.push(getLongString());
+                }
+                else if (type === "empty") {
+                    output.push(getEmptyCase());
+                }
+                else if (type === "control") {
+                    output.push(getControlChars());
+                }
+            }
+
+            document.getElementById("edgeOutput").textContent =
+                output.join("\n\n");
+        }
+
+        function getSQLPayload() {
+            let payloads = [
+                "' OR 1=1 --",
+                "'; DROP TABLE users; --",
+                "\" OR \"\" = \"",
+                "' OR 'a'='a",
+                "' UNION SELECT null, username, password --"
+            ];
+
+            return payloads[Math.floor(Math.random() * payloads.length)];
+        }
+
+        function getXSSPayload() {
+            let payloads = [
+                "&lt;script&gt;alert('XSS')&lt;/script&gt;",
+                "&lt;img src=x onerror=alert(1)&gt;",
+                "&lt;svg onload=alert('XSS')&gt;",
+                "javascript:alert(1)",
+                "&lt;body onload=alert('XSS')&gt;"
+            ];
+
+            return payloads[Math.floor(Math.random() * payloads.length)];
+        }
+
+        function getUnicodePayload() {
+            let payloads = [
+                "𝓣𝓮𝓼𝓽𝓲𝓷𝓰",
+                "テスト",
+                "测试",
+                "😀😀😀😀😀",
+                "\u0000\u0001\u0002",
+                "e\u0301e\u0301e\u0301"
+            ];
+
+            return payloads[Math.floor(Math.random() * payloads.length)];
+        }
+
+        function getLongString() {
+            return "A".repeat(Math.floor(Math.random() * 2000) + 500);
+        }
+
+        function getEmptyCase() {
+            let cases = [
+                "",
+                " ",
+                null,
+                undefined
+            ];
+
+            return cases[Math.floor(Math.random() * cases.length)];
+        }
+
+        function getControlChars() {
+            let chars = [
+                "\n",
+                "\t",
+                "\r",
+                "\b",
+                "\f",
+                "\n\n\n",
+                "\t\t\t"
+            ];
+
+            return chars[Math.floor(Math.random() * chars.length)];
+        }
+
+        function formatJSON() {
+            let input = document.getElementById("jsonInput").value;
+            let status = document.getElementById("jsonStatus");
+            let output = document.getElementById("jsonOutput");
+
+            if (!input.trim()) {
+                status.innerHTML = "<span class='text-yellow-400'>⚠️ Empty input</span>";
+                output.textContent = "";
+                return;
+            }
+
+            try {
+                let parsed = JSON.parse(input);
+
+                let formatted = JSON.stringify(parsed, null, 2);
+
+                output.textContent = formatted;
+                status.innerHTML = "<span class='text-green-400'>✓ Valid JSON</span>";
+
+            } catch (err) {
+                output.textContent = "";
+                status.innerHTML = `
+                    <span class='text-red-400'>✗ Invalid JSON</span><br>
+                    <span class='text-gray-400'>${err.message}</span>
+                `;
+            }
+        }
+
+        function clearJSON() {
+            document.getElementById("jsonInput").value = "";
+            document.getElementById("jsonOutput").textContent = "";
+            document.getElementById("jsonStatus").innerHTML = "";
+        }
+
+        function analyzeString() {
+            let input = document.getElementById("stringInput").value;
+            let results = document.getElementById("stringResults");
+
+            // Basic metrics
+            let length = input.length;
+            let trimmedLength = input.trim().length;
+            let spaces = (input.match(/ /g) || []).length;
+            let tabs = (input.match(/\t/g) || []).length;
+            let newlines = (input.match(/\n/g) || []).length;
+
+            // Character breakdown
+            let hasNumbers = /\d/.test(input);
+            let hasLetters = /[a-zA-Z]/.test(input);
+            let hasSpecial = /[^a-zA-Z0-9\s]/.test(input);
+
+            // Empty / edge cases
+            let isEmpty = input.length === 0;
+            let isWhitespaceOnly = input.trim().length === 0;
+
+            results.innerHTML = `
+                <div class="bg-gray-800 p-3 rounded">
+                    <strong>Length:</strong> ${length}
+                </div>
+
+                <div class="bg-gray-800 p-3 rounded">
+                    <strong>Trimmed Length:</strong> ${trimmedLength}
+                </div>
+
+                <div class="bg-gray-800 p-3 rounded">
+                    <strong>Spaces:</strong> ${spaces} |
+                    <strong>Tabs:</strong> ${tabs} |
+                    <strong>Newlines:</strong> ${newlines}
+                </div>
+
+                <div class="bg-gray-800 p-3 rounded">
+                    <strong>Contains Letters:</strong> ${hasLetters} <br>
+                    <strong>Contains Numbers:</strong> ${hasNumbers} <br>
+                    <strong>Contains Special Characters:</strong> ${hasSpecial}
+                </div>
+
+                <div class="bg-gray-800 p-3 rounded">
+                    <strong>Edge Cases:</strong><br>
+                    Empty: ${isEmpty} <br>
+                    Whitespace Only: ${isWhitespaceOnly}
+                </div>
+            `;
+        }
+
+        function generateBoundaryValues() {
+            let min = parseInt(document.getElementById("minVal").value);
+            let max = parseInt(document.getElementById("maxVal").value);
+            let output = document.getElementById("bvaOutput");
+
+            if (isNaN(min) || isNaN(max)) {
+                output.innerHTML = `<span class="text-red-400">⚠️ Please enter valid numbers</span>`;
+                return;
+            }
+
+            if (min >= max) {
+                output.innerHTML = `<span class="text-red-400">⚠️ Min must be less than Max</span>`;
+                return;
+            }
+
+            let testValues = [
+                { label: "Min - 1", value: min - 1 },
+                { label: "Min", value: min },
+                { label: "Min + 1", value: min + 1 },
+                { label: "Max - 1", value: max - 1 },
+                { label: "Max", value: max },
+                { label: "Max + 1", value: max + 1 }
+            ];
+
+            output.innerHTML = `
+                <div class="bg-gray-800 p-4 rounded">
+                    ${testValues.map(v => `
+                        <div class="flex justify-between border-b border-gray-700 py-1">
+                            <span>${v.label}</span>
+                            <span class="text-blue-400 font-mono">${v.value}</span>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        function classifyBugAuto() {
+            let title = document.getElementById("bugTitle").value.toLowerCase();
+            let desc = document.getElementById("bugDesc").value.toLowerCase();
+            let output = document.getElementById("bugOutput");
+
+            let text = title + " " + desc;
+
+            let probability = "low";
+            let consequence = "low";
+
+            // 🔍 HIGH PROBABILITY signals (user will likely encounter)
+            let highProbKeywords = [
+                "always", "every time", "cannot avoid", "frequently",
+                "on load", "all users", "login", "homepage", "navigation"
+            ];
+
+            // 💥 HIGH CONSEQUENCE signals (workflow blocking)
+            let highConsKeywords = [
+                "cannot", "blocked", "crash", "freeze", "error",
+                "stuck", "fails", "not working", "broken", "prevents"
+            ];
+
+            // Detect probability
+            for (let word of highProbKeywords) {
+                if (text.includes(word)) {
+                    probability = "high";
+                    break;
+                }
+            }
+
+            // Detect consequence
+            for (let word of highConsKeywords) {
+                if (text.includes(word)) {
+                    consequence = "high";
+                    break;
+                }
+            }
+
+            // 🧠 Classification logic
+            let severity = "";
+            let priority = "";
+            let explanation = "";
+
+            if (probability === "high" && consequence === "high") {
+                severity = "🔴 Critical";
+                priority = "P0 - Immediate Fix Required";
+                explanation = "Frequent occurrence + workflow blocking issue.";
+            }
+
+            else if (probability === "high" && consequence === "low") {
+                severity = "🟠 Major";
+                priority = "P1 - High Priority";
+                explanation = "Common issue but does not fully block workflow.";
+            }
+
+            else if (probability === "low" && consequence === "high") {
+                severity = "🟠 Major (Edge Blocker)";
+                priority = "P1 - Investigate Soon";
+                explanation = "Rare but blocks critical functionality when encountered.";
+            }
+
+            else {
+                severity = "🟡 Minor";
+                priority = "P2 - Low Priority";
+                explanation = "Low impact and low frequency issue.";
+            }
+
+            output.innerHTML = `
+                <div class="bg-gray-800 p-4 rounded space-y-2">
+                    <div><strong>Title:</strong> ${title}</div>
+                    <div><strong>Probability:</strong> ${probability}</div>
+                    <div><strong>Consequence:</strong> ${consequence}</div>
+                    <div><strong>Severity:</strong> ${severity}</div>
+                    <div><strong>Priority:</strong> ${priority}</div>
+                    <div class="text-gray-300 mt-2">${explanation}</div>
+                </div>
+            `;
+        }
+
+       function generateFile() {
+            let type = document.getElementById("fileType").value;
+            let sizeKB = parseInt(document.getElementById("fileSize").value);
+            let status = document.getElementById("fileStatus");
+
+            if (isNaN(sizeKB) || sizeKB <= 0) {
+                status.innerHTML = "⚠️ Enter a valid file size";
+                return;
+            }
+
+            let blob;
+
+            if (type === "txt") {
+                blob = generateTextFile(sizeKB);
+            }
+
+            else if (type === "docx") {
+                blob = generateDocxFile(sizeKB);
+            }
+
+            else if (type === "json") {
+                blob = generateJsonFile(sizeKB);
+            }
+
+            else if (type === "csv") {
+                blob = generateCsvFile(sizeKB);
+            }
+
+            else if (type === "gif") {
+                blob = generateGifFile(sizeKB);
+            }
+
+            else if (type === "mp4") {
+                blob = generateMp4File(sizeKB);
+            }
+
+            else if (type === "mp3") {
+                blob = generateMp3File(sizeKB);
+            }
+
+            else if (type === "png" || type === "jpg") {
+                let bytes = new Uint8Array(sizeKB * 1024);
+                for (let i = 0; i < bytes.length; i++) {
+                    bytes[i] = Math.floor(Math.random() * 256);
+                }
+                blob = new Blob([bytes], { type: "application/octet-stream" });
+            }
+
+            // Download
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement("a");
+
+            a.href = url;
+            a.download = `testfile.${type}`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+
+            status.innerHTML = `Generated ${sizeKB}KB ${type.toUpperCase()} file`;
+        }
+
+        function generateDocxFile(targetKB) {
+            let targetBytes = targetKB * 1024;
+
+            let documentXml =
+        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+            <w:body>
+                <w:p>
+                    <w:r>
+                        <w:t>QA Test Document</w:t>
+                    </w:r>
+                </w:p>
+            </w:body>
+        </w:document>`;
+
+            let contentTypes = `<Types></Types>`;
+            let rels = `<Relationships></Relationships>`;
+
+            let base =
+                "CONTENT_TYPES\n" + contentTypes +
+                "\nRELS\n" + rels +
+                "\nDOCUMENT\n" + documentXml;
+
+            let encoder = new TextEncoder();
+
+            // 🔁 STRICT SIZE LOOP
+            while (true) {
+                let bytes = encoder.encode(base);
+
+                if (bytes.length >= targetBytes) {
+                    // trim EXACTLY to target size
+                    let trimmed = bytes.slice(0, targetBytes);
+
+                    return new Blob([trimmed], {
+                        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    });
+                }
+
+                // expand deterministically (important!)
+                base += "\n<w:p><w:r><w:t>FILLER</w:t></w:r></w:p>";
+            }
+        }
+
+        function generateTextFile(targetKB) {
+            let targetBytes = targetKB * 1024;
+            let chunk = "QA_TEST_DATA_1234567890\n";
+            let content = "";
+
+            while (content.length < targetBytes) {
+                content += chunk;
+            }
+
+            // Trim to exact size
+            content = content.substring(0, targetBytes);
+
+            return new Blob([content], { type: "text/plain" });
+        }
+
+        function generateJsonFile(targetKB) {
+            let targetBytes = targetKB * 1024;
+
+            let baseObject = {
+                id: 1,
+                name: "qa_test",
+                data: ""
+            };
+
+            let filler = "x".repeat(1000);
+            let data = "";
+
+            // grow until we reach target size
+            while (true) {
+                data += filler;
+
+                baseObject.data = data;
+
+                let json = JSON.stringify(baseObject);
+
+                if (json.length >= targetBytes) {
+                    // trim excess to match size closely
+                    let trimmed = json.substring(0, targetBytes);
+                    return new Blob([trimmed], { type: "application/json" });
+                }
+            }
+        }
+
+        function generateCsvFile(targetKB) {
+            let targetBytes = targetKB * 1024;
+
+            let header = "id,name,value\n";
+            let rowIndex = 0;
+            let content = header;
+
+            while (content.length < targetBytes) {
+                let row = `${rowIndex},test_user_${rowIndex},${Math.random()}\n`;
+                content += row;
+                rowIndex++;
+            }
+
+            // trim to exact size
+            content = content.substring(0, targetBytes);
+
+            return new Blob([content], { type: "text/csv" });
+        }
+
+        function generateGifFile(targetKB) {
+            let targetBytes = targetKB * 1024;
+
+            // Minimal GIF header (GIF89a)
+            let header = "GIF89a";
+
+            // Fill with pseudo-binary data
+            let data = header;
+
+            while (data.length < targetBytes) {
+                data += String.fromCharCode(Math.floor(Math.random() * 256));
+            }
+
+            data = data.substring(0, targetBytes);
+
+            // Convert to byte-safe blob
+            let bytes = new Uint8Array(data.split('').map(c => c.charCodeAt(0)));
+
+            return new Blob([bytes], { type: "image/gif" });
+        }
+
+        function generateMp4File(targetKB) {
+            let size = targetKB * 1024;
+            let bytes = new Uint8Array(size);
+
+            // MP4 files often start with ftyp box (basic header)
+            let header = [0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70];
+
+            for (let i = 0; i < header.length && i < bytes.length; i++) {
+                bytes[i] = header[i];
+            }
+
+            for (let i = header.length; i < bytes.length; i++) {
+                bytes[i] = Math.floor(Math.random() * 256);
+            }
+
+            return new Blob([bytes], { type: "video/mp4" });
+        }
+
+        function generateMp3File(targetKB) {
+            let size = targetKB * 1024;
+            let bytes = new Uint8Array(size);
+
+            // MP3 frame sync header (common starting bytes)
+            let header = [0xFF, 0xFB];
+
+            for (let i = 0; i < header.length && i < bytes.length; i++) {
+                bytes[i] = header[i];
+            }
+
+            for (let i = header.length; i < bytes.length; i++) {
+                bytes[i] = Math.floor(Math.random() * 256);
+            }
+
+            return new Blob([bytes], { type: "audio/mpeg" });
+        }
+
+    </script>
+
+</body>
+</html>
