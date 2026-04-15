@@ -314,24 +314,33 @@
             const container = document.getElementById("tool-content");
 
             if (tool === "text") {
-                container.innerHTML = `
-                    <h2 class="text-2xl font-bold mb-4">Random Text Generator</h2>
+                document.getElementById("tool-content").innerHTML = `
+                    <div class="space-y-4">
 
-                    <label class="block mb-2">Length:</label>
-                    <input id="length" type="number" value="20"
-                        class="w-full p-2 mb-4 rounded bg-gray-700 text-white">
+                        <input id="textLength" type="number" placeholder="Length"
+                            class="w-full p-2 rounded bg-gray-700 text-white" value="100"/>
 
-                    <label class="block mb-2">Include Spaces:</label>
-                    <input id="spaces" type="checkbox" class="mb-4">
+                        <div class="grid grid-cols-2 gap-2 text-sm">
 
-                    <button onclick="generateText()" 
-                        class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
-                        Generate
-                    </button>
+                            <label><input type="checkbox" id="letters" checked> Letters</label>
+                            <label><input type="checkbox" id="numbers"> Numbers</label>
+                            <label><input type="checkbox" id="symbols"> Symbols</label>
+                            <label><input type="checkbox" id="spaces" checked> Spaces</label>
+                            <label><input type="checkbox" id="punctuation"> Punctuation</label>
+                            <label><input type="checkbox" id="capitalize"> Random Caps</label>
 
-                    <textarea id="output" 
-                        class="w-full mt-4 p-2 rounded bg-gray-900 text-white"
-                        rows="4"></textarea>
+                        </div>
+
+                        <button onclick="generateText()"
+                            class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+                            Generate
+                        </button>
+
+                        <textarea id="textOutput"
+                            class="w-full p-3 rounded bg-gray-900 text-green-400"
+                            rows="6" readonly></textarea>
+
+                    </div>
                 `;
             }
 
@@ -650,56 +659,90 @@
         }
 
         function generateText() {
-            let length = parseInt(document.getElementById("length").value);
+            let length = parseInt(document.getElementById("textLength").value) || 100;
+
             let includeSpaces = document.getElementById("spaces").checked;
+            let includeNumbers = document.getElementById("numbers")?.checked;
+            let includeSymbols = document.getElementById("symbols")?.checked;
+            let includeCaps = document.getElementById("capitalize")?.checked;
+            let includePunctuation = document.getElementById("punctuation")?.checked;
 
-            let chars = "abcdefghijklmnopqrstuvwxyz";
+            let letters = "abcdefghijklmnopqrstuvwxyz";
+            let numbers = "0123456789";
+            let symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+            let vowels = "aeiou";
+            let consonants = "bcdfghjklmnpqrstvwxyz";
+
             let result = "";
+            let currentLength = 0;
 
-            if (!includeSpaces) {
-                // Simple random string (no spaces)
-                for (let i = 0; i < length; i++) {
-                    let randomIndex = Math.floor(Math.random() * chars.length);
-                    result += chars[randomIndex];
-                }
-            } else {
-                // Word-based generation for natural spacing
-                let currentLength = 0;
+            function generateWord(wordLength) {
+                let word = "";
 
-                while (currentLength < length) {
-                    // Create a "word" between 2–10 characters
-                    let wordLength = Math.floor(Math.random() * 8) + 2;
-                    let word = "";
+                for (let i = 0; i < wordLength; i++) {
+                    let set = (i % 2 === 0) ? consonants : vowels;
+                    let char = set[Math.floor(Math.random() * set.length)];
 
-                    for (let i = 0; i < wordLength; i++) {
-                        let randomIndex = Math.floor(Math.random() * chars.length);
-                        word += chars[randomIndex];
+                    if (includeCaps && Math.random() < 0.2) {
+                        char = char.toUpperCase();
                     }
 
-                    // Add word to result
-                    result += word;
-                    currentLength += wordLength;
-
-                    // Add space logic (more natural variation)
-                    if (currentLength < length) {
-                        let spaceChance = Math.random();
-
-                        // 70% chance normal space, 30% double space
-                        if (spaceChance < 0.7) {
-                            result += " ";
-                            currentLength += 1;
-                        } else {
-                            result += "  "; // double space (QA edge case friendly)
-                            currentLength += 2;
-                        }
-                    }
+                    word += char;
                 }
 
-                // Trim excess if slightly over target length
-                result = result.trim();
+                return word;
             }
 
-            document.getElementById("output").value = result;
+            while (currentLength < length) {
+
+                // build word
+                let wordLength = Math.floor(Math.random() * 8) + 2;
+                let word = generateWord(wordLength);
+
+                result += word;
+                currentLength += wordLength;
+
+                // optionally inject numbers/symbols
+                if (includeNumbers && Math.random() < 0.1) {
+                    let n = numbers[Math.floor(Math.random() * numbers.length)];
+                    result += n;
+                    currentLength += 1;
+                }
+
+                if (includeSymbols && Math.random() < 0.1) {
+                    let s = symbols[Math.floor(Math.random() * symbols.length)];
+                    result += s;
+                    currentLength += 1;
+                }
+
+                // spacing logic
+                if (includeSpaces && currentLength < length) {
+                    let spaceChance = Math.random();
+
+                    if (spaceChance < 0.7) {
+                        result += " ";
+                        currentLength += 1;
+                    } else if (spaceChance < 0.9) {
+                        result += "  ";
+                        currentLength += 2;
+                    } else {
+                        result += "   ";
+                        currentLength += 3;
+                    }
+                }
+
+                // punctuation
+                if (includePunctuation && Math.random() < 0.15 && currentLength < length) {
+                    let p = ".,!?;"[Math.floor(Math.random() * 5)];
+                    result += p;
+                    currentLength += 1;
+                }
+            }
+
+            // enforce exact length (fixes overflow bug)
+            result = result.slice(0, length);
+
+            document.getElementById("textOutput").value = result;
         }
 
         async function sendRequest() {
