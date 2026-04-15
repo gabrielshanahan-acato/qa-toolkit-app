@@ -220,6 +220,8 @@
         }
 
         function renderCard(tool) {
+            let stats = getToolStats();
+            let usage = stats[tool.id]?.count || 0;
             return `
                 <div class="relative bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-transform hover:scale-[1.02] flex flex-col gap-3">
 
@@ -246,6 +248,11 @@
                         ${tool.category}
                     </span>
 
+                    <!-- Usage Statistics -->
+                    <p class="text-xs text-gray-500 mt-2">
+                        Used ${usage} time${usage === 1 ? "" : "s"}
+                    </p>
+
                 </div>
             `;
         }
@@ -258,7 +265,27 @@
                 .join("");
         }
 
+        function getToolStats() {
+            return JSON.parse(localStorage.getItem("toolStats") || "{}");
+        }
+
+        function saveToolStats(stats) {
+            localStorage.setItem("toolStats", JSON.stringify(stats));
+        }
+
         function openTool(tool) {
+            // Analytics tracking
+            let stats = getToolStats();
+
+            if (!stats[tool]) {
+                stats[tool] = { count: 0, lastUsed: null };
+            }
+
+            stats[tool].count += 1;
+            stats[tool].lastUsed = new Date().toISOString();
+
+            saveToolStats(stats);
+
             // Hide cards
             document.getElementById("toolGrid").classList.add("hidden");
             document.getElementById("filterBar").classList.add("hidden");
@@ -279,6 +306,8 @@
             document.getElementById("tool-container").classList.add("hidden");
 
             document.getElementById("tool-content").innerHTML = "";
+
+            renderTools();
         }
 
         function loadTool(tool) {
