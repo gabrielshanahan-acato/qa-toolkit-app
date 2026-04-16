@@ -78,6 +78,12 @@ const tools = [
         name: "SQL Query Builder",
         description: "Build simple SQL queries.",
         category: "Data"
+    },
+    {
+        id: "rca",
+        name: "Root Cause Analysis Walkthrough",
+        description: "Walks through the RCA process.",
+        category: "QA"
     }
 ];
 
@@ -654,9 +660,139 @@ function loadTool(tool) {
         `;
     }
 
+    else if (tool === "rca") {
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4">Root Cause Analysis Walkthrough</h2>
+
+        <label class="block mb-1">1. Enter the ADO bug ID</label>
+        <textarea id="rca_bug"
+            class="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+            placeholder="e.g. 123456"></textarea>
+        
+        <label class="block mb-1">2. What was the issue?</label>
+        <textarea id="rca_issue"
+            class="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+            placeholder="e.g. Login button does nothing in production"></textarea>
+
+        <label class="block mb-1">3. Where was it discovered?</label>
+        <input id="rca_found"
+            class="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+            placeholder="Team / DEV / STG / Production">
+
+        <label class="block mb-1">4. What should have caught it?</label>
+        <textarea id="rca_should_have"
+            class="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+            placeholder="e.g. Functional test / regression suite / code review / automation"></textarea>
+
+        <label class="block mb-1">5. What testing step failed?</label>
+        <select id="rca_step"
+            class="w-full p-2 mb-3 rounded bg-gray-700 text-white">
+
+            <option value="requirements">Requirements / Design review</option>
+            <option value="dev">Development / Unit testing</option>
+            <option value="qa">QA testing</option>
+            <option value="automation">Automation coverage</option>
+            <option value="uat">UAT validation</option>
+            <option value="release">Release / deployment checks</option>
+            <option value="monitoring">Post-release monitoring</option>
+        </select>
+
+        <label class="block mb-1">6. How did it escape detection?</label>
+        <textarea id="rca_escape"
+            class="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+            placeholder="e.g. Not covered in regression suite"></textarea>
+
+        <label class="block mb-1">7. Contributing process gaps</label>
+        <textarea id="rca_gaps"
+            class="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+            placeholder="e.g. Missing test case, unclear requirements, insufficient coverage"></textarea>
+
+        <button onclick="generateProcessRCA()"
+            class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+            Generate RCA Summary
+        </button>
+
+        <div id="rca_output"
+            class="mt-4 p-4 bg-gray-800 rounded whitespace-pre-line text-gray-200"></div>
+    `;
+}
+
     else {
         container.innerHTML = `<p>Tool coming soon...</p>`;
     }
+}
+
+function generateProcessRCA() {
+    const bug = document.getElementById("rca_bug").value;
+    const issue = document.getElementById("rca_issue").value;
+    const found = document.getElementById("rca_found").value;
+    const shouldHave = document.getElementById("rca_should_have").value;
+    const step = document.getElementById("rca_step").value;
+    const escape = document.getElementById("rca_escape").value;
+    const gaps = document.getElementById("rca_gaps").value;
+
+    const output = document.getElementById("rca_output");
+
+    let summary = `
+Root Cause Analysis 
+--------------------------------
+
+ADO Bug ID: ${bug}
+
+Issue:
+${issue}
+
+Where it was found:
+${found}
+
+Expected detection point:
+${shouldHave}
+
+--------------------------------
+PROCESS STEP THAT FAILED:
+${step.toUpperCase()}
+
+--------------------------------
+HOW IT ESCAPED:
+${escape}
+
+--------------------------------
+CONTRIBUTING PROCESS GAPS:
+${gaps}
+
+--------------------------------
+KEY TAKEAWAY:
+`;
+
+    // simple mapping logic (you can expand later)
+    if (step === "qa") {
+        summary += "- Gap in QA test coverage or test design\n- Missing regression or edge case validation";
+    }
+    else if (step === "automation") {
+        summary += "- Automation coverage gap or outdated test suite\n- Flaky or missing automated checks";
+    }
+    else if (step === "requirements") {
+        summary += "- Ambiguous or incomplete requirements\n- Missed acceptance criteria";
+    }
+    else if (step === "release") {
+        summary += "- Deployment validation missing or insufficient\n- Lack of pre-release sanity checks";
+    }
+    else {
+        summary += "- Process breakdown at earlier lifecycle stage\n- Requires review of upstream validation steps";
+    }
+
+    summary += `
+
+--------------------------------
+PREVENTION PLAN:
+- Add missing test coverage
+- Improve validation at "${step}" stage
+- Document regression scenario
+- Add monitoring or automated checks
+- Review similar past defects for pattern matching
+`;
+
+    output.textContent = summary;
 }
 
 function renderSQLBuilder() {
