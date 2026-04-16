@@ -1844,3 +1844,80 @@ function showCopyFeedback(element) {
         btn.textContent = original;
     }, 1500);
 }
+
+const logoWrapper = document.querySelector(".logo-wrapper");
+const colors = ["#961f1f", "#d8ad2b", "#f8e8bb"];
+
+logoWrapper.addEventListener("mouseenter", () => {
+    const rect = logoWrapper.getBoundingClientRect();
+
+    const bursts = Math.floor(Math.random() * 3) + 3;
+
+    for (let b = 0; b < bursts; b++) {
+
+        const startX = Math.random() * rect.width;
+        const startY = Math.random() * rect.height;
+
+        for (let i = 0; i < 14; i++) {
+
+            const spark = document.createElement("div");
+            spark.classList.add("spark");
+
+            spark.style.background =
+                colors[Math.floor(Math.random() * colors.length)];
+
+            spark.style.left = startX + "px";
+            spark.style.top = startY + "px";
+
+            logoWrapper.appendChild(spark);
+
+            // physics values
+            const angle = Math.random() * 2 * Math.PI;
+            const speed = Math.random() * 6 + 3;
+
+            let vx = Math.cos(angle) * speed;
+            let vy = Math.sin(angle) * speed;
+
+            let x = startX;
+            let y = startY;
+            
+            const smoke = document.createElement("div");
+            smoke.classList.add("smoke");
+
+            smoke.style.left = startX + "px";
+            smoke.style.top = startY + "px";
+
+            logoWrapper.appendChild(smoke);
+
+            setTimeout(() => smoke.remove(), 700);
+
+            const gravity = 0.15;
+
+            function animate() {
+                vx *= 0.995;      // less air resistance (slower slowdown)
+                vy += gravity;    // gravity still applies
+
+                x += vx;
+                y += vy;
+
+                spark.style.left = x + "px";
+                spark.style.top = y + "px";
+
+                // slower fade-out (KEY CHANGE)
+                let currentOpacity = parseFloat(spark.style.opacity);
+                spark.style.opacity = currentOpacity - 0.003;
+
+                // let them live longer before removal
+                if (currentOpacity <= 0 || y > rect.height + 200) {
+                    spark.remove();
+                    return;
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            spark.style.opacity = 1;
+            requestAnimationFrame(animate);
+        }
+    }
+});
