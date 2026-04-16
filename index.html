@@ -336,10 +336,16 @@
                             Generate
                         </button>
 
-                        <textarea id="textOutput"
-                            class="w-full p-3 rounded bg-gray-900 text-green-400"
-                            rows="6" readonly></textarea>
+                            <div class="relative">
+                                <textarea id="textOutput"
+                                    class="w-full p-3 rounded bg-gray-900 text-green-400"
+                                    rows="6" readonly></textarea>
 
+                                <button onclick="copyToClipboard('textOutput')"
+                                    class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-sm">
+                                    Copy
+                                </button>
+                            </div>
                     </div>
                 `;
             }
@@ -373,8 +379,15 @@
                         Generate
                     </button>
 
-                    <pre id="dataOutput"
-                        class="mt-4 p-3 bg-gray-900 rounded text-sm overflow-auto"></pre>
+                    <div class="relative">
+                        <pre id="dataOutput"
+                        class="mt-4 p-6 bg-gray-900 rounded text-sm overflow-auto"></pre>
+
+                        <button onclick="copyToClipboard('dataOutput')"
+                            class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-sm">
+                            Copy
+                        </button>
+                    </div>
                 `;
             }
 
@@ -418,8 +431,15 @@
                     <div class="mt-6">
                         <h3 class="text-lg font-semibold mb-2">Response</h3>
                         <div id="status" class="mb-2 text-sm text-gray-300"></div>
-                        <pre id="response"
-                            class="p-3 bg-gray-900 rounded overflow-auto text-sm"></pre>
+                            <div class="relative">
+                                <pre id="response"
+                                    class="p-6 bg-gray-900 rounded overflow-auto text-sm"></pre>
+
+                                <button onclick="copyToClipboard('response')"
+                                    class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-sm">
+                                    Copy
+                                </button>
+                            </div>
                     </div>
                 `;
             }
@@ -451,8 +471,15 @@
                     <div id="jsonStatus" class="mt-4 text-sm"></div>
 
                     <!-- Output -->
-                    <pre id="jsonOutput"
-                        class="mt-4 p-4 bg-gray-900 rounded overflow-auto text-sm"></pre>
+                    <div class="relative">
+                        <pre id="jsonOutput"
+                            class="mt-4 p-6 bg-gray-900 rounded overflow-auto text-sm"></pre>
+
+                        <button onclick="copyToClipboard('jsonOutput')"
+                            class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-sm">
+                            Copy
+                        </button>
+                    </div>
                 `;
             }
 
@@ -502,8 +529,15 @@
                         Generate Edge Cases
                     </button>
 
-                    <pre id="edgeOutput"
-                        class="mt-4 p-3 bg-gray-900 rounded text-sm overflow-auto"></pre>
+                    <div class="relative">
+                        <pre id="edgeOutput"
+                            class="mt-4 p-6 bg-gray-900 rounded text-sm overflow-auto"></pre>
+
+                        <button onclick="copyToClipboard('edgeOutput')"
+                            class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-sm">
+                            Copy
+                        </button>
+                    </div>
                 `;
             }
 
@@ -1412,6 +1446,39 @@
             }
 
             return new Blob([bytes], { type: "audio/mpeg" });
+        }
+
+        //Test output copy to clipboard
+        function copyToClipboard(elementId) {
+            const el = document.getElementById(elementId);
+
+            if (!el) {
+                console.error("Copy failed: element not found");
+                return;
+            }
+
+            const value = el.value || el.textContent;
+
+            navigator.clipboard.writeText(value)
+                .then(() => {
+                    showCopyFeedback(el);
+                })
+                .catch(err => {
+                    console.error("Copy failed:", err);
+                });
+        }
+
+        function showCopyFeedback(element) {
+            const btn = element.parentElement.querySelector("button");
+
+            if (!btn) return;
+
+            const original = btn.textContent;
+            btn.textContent = "Copied!";
+
+            setTimeout(() => {
+                btn.textContent = original;
+            }, 1500);
         }
 
     </script>
