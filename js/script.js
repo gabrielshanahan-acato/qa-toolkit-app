@@ -2090,12 +2090,78 @@ function triggerEasterEgg() {
     launchMegaFireworks();
 }
 
-function launchMegaFireworks() {
-    const rect = logo.getBoundingClientRect();
+function createFireworkBurst() {
+    const rect = logoWrapper.getBoundingClientRect();
 
-    for (let i = 0; i < 8; i++) {
+    const bursts = Math.floor(Math.random() * 3) + 3;
+
+    for (let b = 0; b < bursts; b++) {
+
+        const startX = Math.random() * rect.width;
+        const startY = Math.random() * rect.height;
+
+        // smoke
+        const smoke = document.createElement("div");
+        smoke.classList.add("smoke");
+        smoke.style.left = startX + "px";
+        smoke.style.top = startY + "px";
+        logoWrapper.appendChild(smoke);
+        setTimeout(() => smoke.remove(), 700);
+
+        for (let i = 0; i < 14; i++) {
+
+            const spark = document.createElement("div");
+            spark.classList.add("spark");
+
+            spark.style.left = startX + "px";
+            spark.style.top = startY + "px";
+
+            const colors = ["#ff4d4d", "#ffd24d", "#4dd2ff", "#b84dff", "#4dff88"];
+            spark.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+            logoWrapper.appendChild(spark);
+
+            let vx = (Math.random() - 0.5) * 6;
+            let vy = (Math.random() - 1.5) * 6;
+            const gravity = 0.15;
+
+            let x = startX;
+            let y = startY;
+
+            function animate() {
+                vx *= 0.995;
+                vy += gravity;
+
+                x += vx;
+                y += vy;
+
+                spark.style.left = x + "px";
+                spark.style.top = y + "px";
+
+                spark.style.opacity -= 0.005;
+
+                if (spark.style.opacity <= 0) {
+                    spark.remove();
+                    return;
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            spark.style.opacity = 1;
+            requestAnimationFrame(animate);
+
+            setTimeout(() => spark.remove(), 3000);
+        }
+    }
+}
+
+function launchMegaFireworks() {
+    console.log("🎆 Mega fireworks triggered");
+
+    for (let i = 0; i < 12; i++) {
         setTimeout(() => {
-            logo.dispatchEvent(new Event("mouseenter"));
+            createFireworkBurst();
         }, i * 200);
     }
 }
