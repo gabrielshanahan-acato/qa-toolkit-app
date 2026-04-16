@@ -82,7 +82,13 @@ const tools = [
     {
         id: "rca",
         name: "Root Cause Analysis Walkthrough",
-        description: "Walks through the RCA process.",
+        description: "Walk through the RCA process.",
+        category: "Reporting"
+    },
+    {
+        id: "bugRep",
+        name: "Bug Report Wizard",
+        description: "Walk through the bug reporting process.",
         category: "Reporting"
     }
 ];
@@ -724,9 +730,125 @@ function loadTool(tool) {
     `;
 }
 
+else if (tool === "bugRep") {
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4">Bug Report Wizard 🐛</h2>
+
+        <div class="space-y-4">
+
+            <!-- Step 1 -->
+            <input id="bugTitle" class="w-full p-2 rounded bg-gray-700 text-white"
+                placeholder="Bug title" />
+
+            <!-- Step 2 -->
+            <textarea id="bugDescription" class="w-full p-2 rounded bg-gray-700 text-white"
+                placeholder="Bug description"></textarea>
+
+            <!-- Step 3 -->
+            <textarea id="bugSteps" class="w-full p-2 rounded bg-gray-700 text-white"
+                placeholder="Reproduction steps"></textarea>
+
+            <textarea id="bugExpected" class="w-full p-2 rounded bg-gray-700 text-white"
+                placeholder="Expected result"></textarea>
+
+            <textarea id="bugActual" class="w-full p-2 rounded bg-gray-700 text-white"
+                placeholder="Actual result"></textarea>
+
+            <!-- Step 4 -->
+            <input id="bugSystem" class="w-full p-2 rounded bg-gray-700 text-white"
+                placeholder="System (test site, subsystem, project, etc)" />
+
+            <!-- Step 5 -->
+            <select id="bugEnv" class="w-full p-2 rounded bg-gray-700 text-white">
+                <option value="DEV">DEV</option>
+                <option value="STG">STG</option>
+                <option value="PROD">PROD</option>
+                <option value="TEAM">TEAM</option>
+            </select>
+
+            <!-- Step 6 -->
+            <div class="flex gap-2">
+                <select id="bugProbability" class="w-1/2 p-2 rounded bg-gray-700 text-white">
+                    <option value="Low">Probability: Low</option>
+                    <option value="High">Probability: High</option>
+                </select>
+
+                <select id="bugConsequence" class="w-1/2 p-2 rounded bg-gray-700 text-white">
+                    <option value="Low">Consequence: Low</option>
+                    <option value="High">Consequence: High</option>
+                </select>
+            </div>
+
+            <button onclick="generateBugReport()"
+                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">
+                Generate Bug Report
+            </button>
+
+            <button onclick="copyBugReport()"
+                class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded ml-2">
+                Copy to Clipboard
+            </button>
+
+            <textarea id="bugOutput"
+                class="w-full p-3 mt-4 rounded bg-gray-800 text-white h-64"
+                readonly></textarea>
+
+        </div>
+    `;
+}
+
     else {
         container.innerHTML = `<p>Tool coming soon...</p>`;
     }
+}
+
+function generateBugReport() {
+    const title = document.getElementById("bugTitle").value;
+    const description = document.getElementById("bugDescription").value;
+    const steps = document.getElementById("bugSteps").value;
+    const expected = document.getElementById("bugExpected").value;
+    const actual = document.getElementById("bugActual").value;
+    const system = document.getElementById("bugSystem").value;
+    const env = document.getElementById("bugEnv").value;
+    const probability = document.getElementById("bugProbability").value;
+    const consequence = document.getElementById("bugConsequence").value;
+
+    const report = `
+BUG REPORT
+
+Title:
+${title}
+
+Description:
+${description}
+
+System:
+${system}
+
+Environment:
+${env}
+
+Reproduction Steps:
+${steps}
+
+Expected Result:
+${expected}
+
+Actual Result:
+${actual}
+
+Risk Assessment:
+- Probability: ${probability}
+- Consequence: ${consequence}
+`;
+
+    document.getElementById("bugOutput").value = report.trim();
+}
+
+function copyBugReport() {
+    const output = document.getElementById("bugOutput");
+    output.select();
+    document.execCommand("copy");
 }
 
 function generateProcessRCA() {
