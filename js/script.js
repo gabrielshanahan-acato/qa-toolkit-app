@@ -53,13 +53,13 @@ const tools = [
         id: "bug",
         name: "Bug Severity Classifier",
         description: "Classifies system bugs based on probability + consequence levels.",
-        category: "QA"
+        category: "Reporting"
     },
     {
         id: "file",
         name: "Test File Generator",
         description: "Generates test files for validating file upload behavior.",
-        category: "Testing"
+        category: "QA"
     },
     {
         id: "sanInput",
@@ -83,7 +83,7 @@ const tools = [
         id: "rca",
         name: "Root Cause Analysis Walkthrough",
         description: "Walks through the RCA process.",
-        category: "QA"
+        category: "Reporting"
     }
 ];
 
@@ -111,7 +111,7 @@ function toggleFavoritesOnly() {
 }
 
 function renderFilterBar() {
-    const categories = ["All", "QA", "API", "Security", "Data", "Testing"];
+    const categories = ["All", "QA", "API", "Security", "Data", "Reporting"];
     const bar = document.getElementById("filterBar");
 
     bar.innerHTML = categories.map(cat => {
