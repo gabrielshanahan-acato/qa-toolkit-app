@@ -712,8 +712,15 @@ function loadTool(tool) {
             Generate RCA Summary
         </button>
 
-        <div id="rca_output"
+        <div class="relative">
+            <div id="rca_output"
             class="mt-4 p-4 bg-gray-800 rounded whitespace-pre-line text-gray-200"></div>
+
+            <button onclick="copyToClipboard('rca_output')"
+                class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-sm">
+                Copy
+            </button>
+        </div>
     `;
 }
 
