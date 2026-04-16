@@ -1880,7 +1880,6 @@ logoWrapper.addEventListener("mouseenter", () => {
 
             let x = startX;
             let y = startY;
-            
             const smoke = document.createElement("div");
             smoke.classList.add("smoke");
 
