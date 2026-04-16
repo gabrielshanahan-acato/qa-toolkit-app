@@ -72,3 +72,12 @@
         filter: blur(6px);
     }
 }
+
+.circus-mode {
+    animation: rainbowFlash 1s infinite;
+}
+
+@keyframes rainbowFlash {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}

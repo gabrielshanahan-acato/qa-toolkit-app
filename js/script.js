@@ -2049,3 +2049,53 @@ logoWrapper.addEventListener("mouseenter", () => {
         }
     }
 });
+
+//easter egg
+let logoClickCount = 0;
+let logoClickTimer = null;
+
+const logo = document.getElementById("logo");
+
+logo.addEventListener("click", () => {
+    logoClickCount++;
+
+    // reset if user pauses too long between clicks
+    clearTimeout(logoClickTimer);
+    logoClickTimer = setTimeout(() => {
+        logoClickCount = 0;
+    }, 1200);
+
+    if (logoClickCount === 10) {
+        triggerEasterEgg();
+        logoClickCount = 0;
+    }
+});
+
+function triggerEasterEgg() {
+    document.body.classList.add("circus-mode");
+
+    // temporary banner
+    const banner = document.createElement("div");
+    banner.innerHTML = "🎪 CIRCUS MODE ACTIVATED 🎪";
+    banner.className =
+        "fixed top-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold z-50";
+
+    document.body.appendChild(banner);
+
+    setTimeout(() => {
+        banner.remove();
+        document.body.classList.remove("circus-mode");
+    }, 5000);
+
+    launchMegaFireworks();
+}
+
+function launchMegaFireworks() {
+    const rect = logo.getBoundingClientRect();
+
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            logo.dispatchEvent(new Event("mouseenter"));
+        }, i * 200);
+    }
+}
